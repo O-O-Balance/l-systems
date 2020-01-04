@@ -1,10 +1,6 @@
-module LSystem exposing (Rules, apply, iteration)
+module LSystem exposing (apply, iteration)
 
-import Dict exposing (Dict)
-
-
-type alias Rules =
-    Dict Char String
+import LSystem.Rules as Rules exposing (Rules)
 
 
 apply : Rules -> String -> String
@@ -12,9 +8,7 @@ apply rules axiom =
     String.foldl
         (\variable result ->
             result
-                ++ Maybe.withDefault
-                    (String.fromChar variable)
-                    (Dict.get variable rules)
+                ++ Rules.get variable rules
         )
         ""
         axiom
