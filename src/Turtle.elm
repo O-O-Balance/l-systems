@@ -1,17 +1,12 @@
-module Turtle exposing (Command, boundingBox, commands, draw, line, move, rotate, rotateLeft, rotateRight, viewBox)
+module Turtle exposing (Command, boundingBox, draw, line, move, rotate, rotateLeft, rotateRight, viewBox)
 
 import Angle exposing (Angle)
 import BoundingBox2d exposing (BoundingBox2d)
-import Dict exposing (Dict)
 import Direction2d exposing (Direction2d)
 import Point2d exposing (Point2d)
 import Polyline2d exposing (Polyline2d)
 import Quantity exposing (Quantity(..))
 import Vector2d
-
-
-type CommandMapping units
-    = CommandMapping (Dict Char (Command units))
 
 
 type Command units
@@ -41,40 +36,12 @@ rotate =
 
 rotateLeft : Angle -> Command units
 rotateLeft angle =
-    Rotate <| Quantity.negate angle
+    Rotate angle
 
 
 rotateRight : Angle -> Command units
 rotateRight angle =
-    Rotate angle
-
-
-commandMapping : Quantity Float units -> Angle -> CommandMapping units
-commandMapping length angle =
-    CommandMapping <|
-        Dict.fromList
-            [ ( 'F', line length )
-            , ( 'f', move length )
-            , ( '+', rotateLeft angle )
-            , ( '-', rotateRight angle )
-            ]
-
-
-commands : Quantity Float units -> Angle -> String -> List (Command units)
-commands length angle commandsString =
-    case commandMapping length angle of
-        CommandMapping dictionary ->
-            String.foldl
-                (\commandCharacter previousCommands ->
-                    case Dict.get commandCharacter dictionary of
-                        Just command ->
-                            List.append previousCommands [ command ]
-
-                        Nothing ->
-                            previousCommands
-                )
-                []
-                commandsString
+    Rotate <| Quantity.negate angle
 
 
 turtle : Turtle units coordinates

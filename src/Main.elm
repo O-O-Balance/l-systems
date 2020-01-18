@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Angle
+import Axis2d
 import BoundingBox2d
 import Geometry.Svg as Svg
 import Html exposing (Html)
@@ -39,9 +40,9 @@ main =
             LSystem.iteration rules axiom iteration
 
         drawing =
-            Turtle.commands length angle commands
+            LSystem.commands length angle commands
                 |> Turtle.draw
-                |> List.map (Polyline2d.rotateAround Point2d.origin (Angle.degrees 180))
+                |> List.map (Polyline2d.mirrorAcross Axis2d.x)
 
         boundingBox =
             Turtle.boundingBox drawing

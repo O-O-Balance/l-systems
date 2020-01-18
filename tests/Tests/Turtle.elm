@@ -1,16 +1,15 @@
 module Tests.Turtle exposing (suite)
 
-import Angle exposing (Angle)
 import BoundingBox2d exposing (BoundingBox2d)
 import Expect exposing (Expectation)
-import Length exposing (Meters)
 import LineSegment2d exposing (LineSegment2d)
 import Pixels exposing (Pixels)
 import Point2d
 import Polyline2d exposing (Polyline2d)
 import Quantity exposing (Quantity)
 import Test exposing (Test, describe, test)
-import Turtle exposing (Command)
+import Tests.Common as Common
+import Turtle
 
 
 lineSegmentsEqualWithin : Quantity Float units -> LineSegment2d units coordinates -> LineSegment2d units coordinates -> Expectation
@@ -178,133 +177,12 @@ suite =
                             |> Expect.equal "-15 -15 45 35"
                 ]
             ]
-        , describe "Functions for working with the Command type" <|
-            let
-                length : Quantity Float Pixels
-                length =
-                    Pixels.pixels 10
-
-                angle : Angle
-                angle =
-                    Angle.degrees 90
-
-                commandSequence1 : List (Command Pixels)
-                commandSequence1 =
-                    [ Turtle.rotateLeft angle
-                    , Turtle.rotateRight angle
-                    , Turtle.rotateLeft angle
-                    ]
-
-                commandSequence2 : List (Command Pixels)
-                commandSequence2 =
-                    [ Turtle.move length
-                    , Turtle.move length
-                    ]
-
-                commandSequence3 : List (Command Pixels)
-                commandSequence3 =
-                    [ Turtle.rotateLeft angle
-                    , Turtle.move length
-                    , Turtle.rotateRight angle
-                    , Turtle.rotateRight angle
-                    , Turtle.move length
-                    , Turtle.rotateLeft angle
-                    , Turtle.rotateLeft angle
-                    , Turtle.move length
-                    ]
-
-                commandSequence4 : List (Command Pixels)
-                commandSequence4 =
-                    [ Turtle.line length ]
-
-                commandSequence5 : List (Command Pixels)
-                commandSequence5 =
-                    [ Turtle.line length
-                    , Turtle.line length
-                    , Turtle.line length
-                    ]
-
-                commandSequence6 : List (Command Pixels)
-                commandSequence6 =
-                    [ Turtle.line length
-                    , Turtle.rotateLeft angle
-                    , Turtle.line length
-                    , Turtle.rotateLeft angle
-                    , Turtle.line length
-                    , Turtle.rotateLeft angle
-                    , Turtle.line length
-                    ]
-
-                commandSequence7 : List (Command Pixels)
-                commandSequence7 =
-                    [ Turtle.line length
-                    , Turtle.rotateLeft angle
-                    , Turtle.line length
-                    , Turtle.move length
-                    , Turtle.rotateLeft angle
-                    , Turtle.move length
-                    , Turtle.line length
-                    , Turtle.rotateLeft angle
-                    , Turtle.line length
-                    ]
-            in
-            [ describe "Turtle.commands"
-                [ test "returns an empty list of commands when given an empty command string" <|
-                    \_ ->
-                        ""
-                            |> Turtle.commands length angle
-                            |> Expect.equal []
-                , test "returns an empty list of commands when given a string of no-ops" <|
-                    \_ ->
-                        "abc"
-                            |> Turtle.commands length angle
-                            |> Expect.equal []
-                , test "returns rotate commands for '+' and '-' characters" <|
-                    \_ ->
-                        "+-+"
-                            |> Turtle.commands length angle
-                            |> Expect.equal commandSequence1
-                , test "returns move commands for 'f' characters" <|
-                    \_ ->
-                        "ff"
-                            |> Turtle.commands length angle
-                            |> Expect.equal commandSequence2
-                , test "returns move and rotate commands when given a string of 'f', '+', '-' and no-ops" <|
-                    \_ ->
-                        "a+f-b-f+c+f"
-                            |> Turtle.commands length angle
-                            |> Expect.equal commandSequence3
-                , test "returns a single draw command when given a single 'F' character" <|
-                    \_ ->
-                        "F"
-                            |> Turtle.commands length angle
-                            |> Expect.equal commandSequence4
-                , test "returns draw commands when for 'F' characters" <|
-                    \_ ->
-                        "FFF"
-                            |> Turtle.commands length angle
-                            |> Expect.equal commandSequence5
-                , test "returns draw and rotate left commands when given a string of 'F' and '+'" <|
-                    \_ ->
-                        "F+F+F+F"
-                            |> Turtle.commands length angle
-                            |> Expect.equal commandSequence6
-                , test "returns draw, move and rotate left commands when given a string of 'F', 'f' and '+'" <|
-                    \_ ->
-                        "F+Ff+fF+F"
-                            |> Turtle.commands length angle
-                            |> Expect.equal commandSequence7
-                , test "returns draw, move and rotate left commands when given a string of 'F', 'f', '+' and no-ops" <|
-                    \_ ->
-                        "aFbc1+Fdf+ef4F+5F"
-                            |> Turtle.commands length angle
-                            |> Expect.equal commandSequence7
-                ]
-            , describe "Turtle.draw" <|
+        , describe "Functions for working with the Command type"
+            [ describe "Turtle.draw" <|
                 let
                     lengthInPixels : Float
                     lengthInPixels =
-                        Pixels.inPixels length
+                        Pixels.inPixels Common.length
 
                     tolerance : Quantity Float Pixels
                     tolerance =
@@ -317,22 +195,22 @@ suite =
                             |> Expect.equal []
                 , test "returns an empty list of polylines when given a list of rotate commands" <|
                     \_ ->
-                        commandSequence1
+                        Common.commandSequence1
                             |> Turtle.draw
                             |> Expect.equal []
                 , test "returns an empty list of polylines when given a list of rotate and move commands" <|
                     \_ ->
-                        commandSequence2
+                        Common.commandSequence2
                             |> Turtle.draw
                             |> Expect.equal []
                 , test "returns an empty list of polylines when given a list of move commands" <|
                     \_ ->
-                        commandSequence3
+                        Common.commandSequence3
                             |> Turtle.draw
                             |> Expect.equal []
                 , test "returns a list of polylines equivalent to a single line segment when given a single draw command" <|
                     \_ ->
-                        commandSequence4
+                        Common.commandSequence4
                             |> Turtle.draw
                             |> List.concatMap Polyline2d.segments
                             |> allLineSegmentsEqualWithin tolerance
@@ -342,7 +220,7 @@ suite =
                                 )
                 , test "returns a list of polylines equivalent to as many line segments as draw commands were given" <|
                     \_ ->
-                        commandSequence5
+                        Common.commandSequence5
                             |> Turtle.draw
                             |> List.concatMap Polyline2d.segments
                             |> allLineSegmentsEqualWithin tolerance
@@ -356,7 +234,7 @@ suite =
                                 )
                 , test "returns a list of polylines forming a square when given alternating draw and rotate left commands" <|
                     \_ ->
-                        commandSequence6
+                        Common.commandSequence6
                             |> Turtle.draw
                             |> List.concatMap Polyline2d.segments
                             |> allLineSegmentsEqualWithin tolerance
@@ -364,14 +242,14 @@ suite =
                                     Polyline2d.fromVertices
                                         [ Point2d.origin
                                         , Point2d.pixels 0 lengthInPixels
-                                        , Point2d.pixels lengthInPixels lengthInPixels
-                                        , Point2d.pixels lengthInPixels 0
+                                        , Point2d.pixels -lengthInPixels lengthInPixels
+                                        , Point2d.pixels -lengthInPixels 0
                                         , Point2d.origin
                                         ]
                                 )
                 , test "returns a list of polylines forming separate shapes when draw commands are interlaced with move commands" <|
                     \_ ->
-                        commandSequence7
+                        Common.commandSequence7
                             |> Turtle.draw
                             |> List.concatMap Polyline2d.segments
                             |> allLineSegmentsEqualWithin tolerance
@@ -379,15 +257,21 @@ suite =
                                     [ Polyline2d.fromVertices
                                         [ Point2d.origin
                                         , Point2d.pixels 0 lengthInPixels
-                                        , Point2d.pixels lengthInPixels lengthInPixels
+                                        , Point2d.pixels -lengthInPixels lengthInPixels
                                         ]
                                     , Polyline2d.fromVertices
-                                        [ Point2d.pixels (lengthInPixels * 2) 0
-                                        , Point2d.pixels (lengthInPixels * 2) -lengthInPixels
-                                        , Point2d.pixels lengthInPixels -lengthInPixels
+                                        [ Point2d.pixels (-lengthInPixels * 2) 0
+                                        , Point2d.pixels (-lengthInPixels * 2) -lengthInPixels
+                                        , Point2d.pixels -lengthInPixels -lengthInPixels
                                         ]
                                     ]
                                 )
+                ]
+            , describe "Turtle.rotate"
+                [ test "returns the same result as Turtle.rotateLeft" <|
+                    \_ ->
+                        Turtle.rotate Common.angle
+                            |> Expect.equal (Turtle.rotateLeft Common.angle)
                 ]
             ]
         ]

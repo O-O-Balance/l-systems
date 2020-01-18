@@ -2,28 +2,13 @@ module Tests.LSystem.Rules exposing (suite)
 
 import Dict exposing (Dict)
 import Expect
-import LSystem.Rules as Rules exposing (Rules)
+import LSystem.Rules as Rules
 import Test exposing (Test, describe, test)
+import Tests.Common as Common
 
 
 suite : Test
 suite =
-    let
-        rules : Rules
-        rules =
-            Rules.empty
-                |> Rules.add 'A' "AB"
-                |> Rules.add 'B' "A"
-                |> Rules.add 'C' ""
-
-        rulesDict : Dict Char String
-        rulesDict =
-            Dict.fromList
-                [ ( 'A', "AB" )
-                , ( 'B', "A" )
-                , ( 'C', "" )
-                ]
-    in
     describe "The LSystem.Rules module"
         [ describe "Rules.add"
             [ test "keeps only one rule when the same rule is added twice" <|
@@ -42,45 +27,45 @@ suite =
                         |> Expect.equal (Dict.singleton 'A' "C")
             ]
         , describe "Rules.get"
-            [ test "returns the substitution string corresponding to a variable according to the production rules" <|
+            [ test "returns Maybe.Just the substitution string corresponding to a variable according to the production rules" <|
                 \_ ->
-                    Rules.get 'A' rules
-                        |> Expect.equal "AB"
-            , test "returns the constant when one is passed to it" <|
+                    Rules.get 'A' Common.rules
+                        |> Expect.equal (Just "AB")
+            , test "returns Maybe.Nothing when a constant is passed to it" <|
                 \_ ->
-                    Rules.get 'D' rules
-                        |> Expect.equal "D"
-            , test "returns the constant passed to it when given Rules.empty as its second argument" <|
+                    Rules.get 'D' Common.rules
+                        |> Expect.equal Nothing
+            , test "returns Maybe.Nothing when given Rules.empty as its second argument" <|
                 \_ ->
-                    Rules.get 'A' Rules.empty
-                        |> Expect.equal "A"
-            , test "returns the empty string for a variable with that substitution string" <|
+                    Rules.get 'A' Common.emptyRules
+                        |> Expect.equal Nothing
+            , test "returns Maybe.Just the empty string for a variable with that substitution string" <|
                 \_ ->
-                    Rules.get 'C' rules
-                        |> Expect.equal ""
+                    Rules.get 'C' Common.rules
+                        |> Expect.equal (Just "")
             ]
         , describe "Rules.toDict"
             [ test "returns an empty dictionary for Rules.empty" <|
                 \_ ->
-                    Rules.empty
+                    Common.emptyRules
                         |> Rules.toDict
                         |> Expect.equal Dict.empty
             , test "returns a dictionary containing a variable-substitution mapping for each rule" <|
                 \_ ->
-                    rules
+                    Common.rules
                         |> Rules.toDict
-                        |> Expect.equal rulesDict
+                        |> Expect.equal Common.rulesDict
             ]
         , describe "Rules.fromDict"
             [ test "returns Rules.empty when passed an empty dictionary" <|
                 \_ ->
                     Dict.empty
                         |> Rules.fromDict
-                        |> Expect.equal Rules.empty
+                        |> Expect.equal Common.emptyRules
             , test "returns a Rules value containing a Rule for each variable-substitution mapping in the dictionary" <|
                 \_ ->
-                    rulesDict
+                    Common.rulesDict
                         |> Rules.fromDict
-                        |> Expect.equal rules
+                        |> Expect.equal Common.rules
             ]
         ]
