@@ -15,8 +15,10 @@ type Command units
     | Rotate Angle
 
 
-type Turtle units coordinates
-    = Turtle (Point2d units coordinates) (Direction2d coordinates)
+type alias Turtle units coordinates =
+    { position : Point2d units coordinates
+    , facing : Direction2d coordinates
+    }
 
 
 line : Quantity Float units -> Command units
@@ -44,43 +46,67 @@ rotateRight angle =
     Rotate <| Quantity.negate angle
 
 
-turtle : Turtle units coordinates
-turtle =
+start : Turtle units coordinates
+start =
     Turtle Point2d.origin Direction2d.y
 
 
 draw : List (Command units) -> List (Polyline2d units coordinates)
 draw commandsList =
     List.foldl
-        (\command ( Turtle position facing, lines ) ->
+        (\command accumulator ->
             let
+                turtle : Turtle units coordinates
+                turtle =
+                    accumulator.turtle
+
                 newPosition : Quantity Float units -> Point2d units coordinates
                 newPosition length =
                     Point2d.translateBy
-                        (Vector2d.withLength length facing)
-                        position
+                        (Vector2d.withLength length turtle.facing)
+                        turtle.position
             in
             case command of
                 Draw length ->
-                    ( Turtle (newPosition length) facing
-                    , List.append lines
-                        [ Polyline2d.fromVertices [ position, newPosition length ] ]
-                    )
+                    { accumulator
+                        | turtle = { turtle | position = newPosition length }
+                        , segments =
+                            ( turtle.position, newPosition length ) :: accumulator.segments
+                    }
 
                 Move length ->
-                    ( Turtle (newPosition length) facing
-                    , lines
-                    )
+                    { accumulator
+                        | turtle = { turtle | position = newPosition length }
+                    }
 
                 Rotate angle ->
-                    ( Turtle position <|
-                        Direction2d.rotateBy angle facing
-                    , lines
-                    )
+                    { accumulator
+                        | turtle = { turtle | facing = Direction2d.rotateBy angle turtle.facing }
+                    }
         )
-        ( turtle, [] )
+        { turtle = start, segments = [] }
         commandsList
-        |> Tuple.second
+        |> .segments
+        |> List.foldr
+            (\( p, q ) lines ->
+                case lines of
+                    (previousQ :: previousP :: otherPoints) :: otherLines ->
+                        if previousQ == p then
+                            if Direction2d.from previousP previousQ == Direction2d.from previousP q then
+                                (q :: previousP :: otherPoints) :: otherLines
+
+                            else
+                                (q :: previousQ :: previousP :: otherPoints) :: otherLines
+
+                        else
+                            [ q, p ] :: lines
+
+                    _ ->
+                        [ [ q, p ] ]
+            )
+            []
+        |> List.reverse
+        |> List.map (List.reverse >> Polyline2d.fromVertices)
 
 
 boundingBox : List (Polyline2d units coordinates) -> Maybe (BoundingBox2d units coordinates)

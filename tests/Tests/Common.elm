@@ -1,4 +1,4 @@
-module Tests.Common exposing (angle, commandSequence1, commandSequence2, commandSequence3, commandSequence4, commandSequence5, commandSequence6, commandSequence7, emptyRules, length, rules, rulesDict)
+module Tests.Common exposing (angle, commandSequence1, commandSequence2, commandSequence3, commandSequence4, commandSequence5, commandSequence6, commandSequence7, commandSequence8, commandSequence9, emptyRules, length, rules, rulesDict)
 
 import Angle exposing (Angle)
 import Dict exposing (Dict)
@@ -104,5 +104,24 @@ commandSequence7 =
     , Turtle.move length
     , Turtle.line length
     , Turtle.rotateLeft angle
+    , Turtle.line length
+    ]
+
+
+commandSequence8 : List (Command Pixels)
+commandSequence8 =
+    [ Turtle.line length
+    , Turtle.move length
+    , Turtle.move <| Quantity.negate length
+    , Turtle.rotateRight angle
+    , Turtle.line length
+    ]
+
+
+commandSequence9 : List (Command Pixels)
+commandSequence9 =
+    [ Turtle.line length
+    , Turtle.move length
+    , Turtle.move <| Quantity.negate length
     , Turtle.line length
     ]

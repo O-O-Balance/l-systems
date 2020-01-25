@@ -25,15 +25,15 @@ lineSegmentsEqualWithin tolerance expected actual =
             ]
 
 
+listsEqualLength : List a -> List b -> Expectation
+listsEqualLength expected =
+    Expect.equal (List.length expected)
+        << List.length
+
+
 allLineSegmentsEqualWithin : Quantity Float units -> List (LineSegment2d units coordinates) -> List (LineSegment2d units coordinates) -> Expectation
 allLineSegmentsEqualWithin tolerance expected actual =
     let
-        lengthExpectation : List (LineSegment2d units coordinates) -> Expectation
-        lengthExpectation =
-            Expect.equal
-                (List.length expected)
-                << List.length
-
         segmentExpectations : List (a -> Expectation)
         segmentExpectations =
             List.map always <|
@@ -44,7 +44,23 @@ allLineSegmentsEqualWithin tolerance expected actual =
     in
     actual
         |> Expect.all
-            (lengthExpectation :: segmentExpectations)
+            (listsEqualLength expected :: segmentExpectations)
+
+
+polylinesEqualWithin : Quantity Float units -> List (Polyline2d units coordinates) -> List (Polyline2d units coordinates) -> Expectation
+polylinesEqualWithin tolerance expected actual =
+    let
+        polylineExpectations : List (a -> Expectation)
+        polylineExpectations =
+            List.map always <|
+                List.map2
+                    (allLineSegmentsEqualWithin tolerance)
+                    (List.map Polyline2d.segments expected)
+                    (List.map Polyline2d.segments actual)
+    in
+    actual
+        |> Expect.all
+            (listsEqualLength expected :: polylineExpectations)
 
 
 suite : Test
@@ -218,20 +234,6 @@ suite =
                                     Polyline2d.fromVertices
                                         [ Point2d.origin, Point2d.pixels 0 lengthInPixels ]
                                 )
-                , test "returns a list of polylines equivalent to as many line segments as draw commands were given" <|
-                    \_ ->
-                        Common.commandSequence5
-                            |> Turtle.draw
-                            |> List.concatMap Polyline2d.segments
-                            |> allLineSegmentsEqualWithin tolerance
-                                (Polyline2d.segments <|
-                                    Polyline2d.fromVertices
-                                        [ Point2d.origin
-                                        , Point2d.pixels 0 lengthInPixels
-                                        , Point2d.pixels 0 <| lengthInPixels * 2
-                                        , Point2d.pixels 0 <| lengthInPixels * 3
-                                        ]
-                                )
                 , test "returns a list of polylines forming a square when given alternating draw and rotate left commands" <|
                     \_ ->
                         Common.commandSequence6
@@ -266,6 +268,45 @@ suite =
                                         ]
                                     ]
                                 )
+                , test "returns a polyline equivalent to a single line segment when given a single draw command" <|
+                    \_ ->
+                        Common.commandSequence4
+                            |> Turtle.draw
+                            |> polylinesEqualWithin tolerance
+                                [ Polyline2d.fromVertices
+                                    [ Point2d.origin, Point2d.pixels 0 lengthInPixels ]
+                                ]
+                , test "combines several line segment into one if they point in the same direction" <|
+                    \_ ->
+                        Common.commandSequence5
+                            |> Turtle.draw
+                            |> polylinesEqualWithin tolerance
+                                [ Polyline2d.fromVertices
+                                    [ Point2d.origin
+                                    , Point2d.pixels 0 <| lengthInPixels * 3
+                                    ]
+                                ]
+                , test "combines two polylines into one if they are connected" <|
+                    \_ ->
+                        Common.commandSequence8
+                            |> Turtle.draw
+                            |> polylinesEqualWithin tolerance
+                                [ Polyline2d.fromVertices
+                                    [ Point2d.origin
+                                    , Point2d.pixels 0 lengthInPixels
+                                    , Point2d.pixels lengthInPixels lengthInPixels
+                                    ]
+                                ]
+                , test "combines two polylines into one line segment if they are connected and are both single line segments pointing in the same direction" <|
+                    \_ ->
+                        Common.commandSequence9
+                            |> Turtle.draw
+                            |> polylinesEqualWithin tolerance
+                                [ Polyline2d.fromVertices
+                                    [ Point2d.origin
+                                    , Point2d.pixels 0 <| lengthInPixels * 2
+                                    ]
+                                ]
                 ]
             , describe "Turtle.rotate"
                 [ test "returns the same result as Turtle.rotateLeft" <|
