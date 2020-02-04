@@ -1,4 +1,4 @@
-module Turtle exposing (Command, boundingBox, draw, line, move, rotate, rotateLeft, rotateRight, viewBox)
+module Turtle exposing (Command, boundingBox, draw, line, move, pop, push, rotate, rotateLeft, rotateRight, viewBox)
 
 import Angle exposing (Angle)
 import BoundingBox2d exposing (BoundingBox2d)
@@ -13,12 +13,16 @@ type Command units
     = Draw (Quantity Float units)
     | Move (Quantity Float units)
     | Rotate Angle
+    | Push
+    | Pop
 
 
-type alias Turtle units coordinates =
-    { position : Point2d units coordinates
-    , facing : Direction2d coordinates
-    }
+type Turtle units coordinates
+    = Turtle
+        { position : Point2d units coordinates
+        , facing : Direction2d coordinates
+        , previous : Maybe (Turtle units coordinates)
+        }
 
 
 line : Quantity Float units -> Command units
@@ -46,9 +50,23 @@ rotateRight angle =
     Rotate <| Quantity.negate angle
 
 
+push : Command units
+push =
+    Push
+
+
+pop : Command units
+pop =
+    Pop
+
+
 start : Turtle units coordinates
 start =
-    Turtle Point2d.origin Direction2d.y
+    Turtle
+        { position = Point2d.origin
+        , facing = Direction2d.y
+        , previous = Nothing
+        }
 
 
 draw : List (Command units) -> List (Polyline2d units coordinates)
@@ -56,9 +74,10 @@ draw commandsList =
     List.foldl
         (\command accumulator ->
             let
-                turtle : Turtle units coordinates
                 turtle =
-                    accumulator.turtle
+                    case accumulator.turtle of
+                        Turtle record ->
+                            record
 
                 newPosition : Quantity Float units -> Point2d units coordinates
                 newPosition length =
@@ -69,20 +88,34 @@ draw commandsList =
             case command of
                 Draw length ->
                     { accumulator
-                        | turtle = { turtle | position = newPosition length }
+                        | turtle = Turtle { turtle | position = newPosition length }
                         , segments =
-                            ( turtle.position, newPosition length ) :: accumulator.segments
+                            ( turtle.position, newPosition length )
+                                :: accumulator.segments
                     }
 
                 Move length ->
                     { accumulator
-                        | turtle = { turtle | position = newPosition length }
+                        | turtle = Turtle { turtle | position = newPosition length }
                     }
 
                 Rotate angle ->
                     { accumulator
-                        | turtle = { turtle | facing = Direction2d.rotateBy angle turtle.facing }
+                        | turtle = Turtle { turtle | facing = Direction2d.rotateBy angle turtle.facing }
                     }
+
+                Push ->
+                    { accumulator
+                        | turtle = Turtle { turtle | previous = Just (Turtle turtle) }
+                    }
+
+                Pop ->
+                    case turtle.previous of
+                        Just previous ->
+                            { accumulator | turtle = previous }
+
+                        Nothing ->
+                            accumulator
         )
         { turtle = start, segments = [] }
         commandsList

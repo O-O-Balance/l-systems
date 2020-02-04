@@ -36,6 +36,8 @@ commandMapping length angle =
         |> Rules.add 'f' [ Turtle.move length ]
         |> Rules.add '+' [ Turtle.rotateLeft angle ]
         |> Rules.add '-' [ Turtle.rotateRight angle ]
+        |> Rules.add '[' [ Turtle.push ]
+        |> Rules.add ']' [ Turtle.pop ]
 
 
 commands : Quantity Float units -> Angle -> String -> List (Command units)
